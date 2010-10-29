@@ -1,0 +1,44 @@
+ghar (git: home as repositories)
+
+ghar can help you manage your $HOME in git using a collection of git
+repos seperated by topic or privacy. For example if you work on a
+variety of machines and want to share your .emacs on github but not your
+.ssh then ghar is for you.
+
+INSTALL
+=======
+  $ git clone git://ifup.org/philips/ghar.git
+  $ export PATH=$PATH:`pwd`/ghar/bin/ # You may wish to make this permanent
+
+Getting Started
+===============
+  $ cd ghar
+  $ mkdir devel
+  $ cd devel
+  $ git init
+  $ mv ~/.vimrc .
+  $ git add .vimrc
+  $ git commit -m "vimrc: initial commit"
+  $ ghar install                                            [14:05:47]
+    devel
+      installed	/home/philips/.vimrc
+  $ ghar install --status                                   [14:08:58]
+    devel
+     ok	/home/philips/.vimrc
+
+Adding External Repos
+=====================
+  # While in the base of the ghar directory
+  $ ghar add git://github.com/robbyrussell/oh-my-zsh.git oh-my-zsh
+  $ ghar install
+    oh-my-zsh
+     installed	/home/philips/.oh-my-zsh
+
+Thanks
+======
+These two chaps helped me on the original bash implementation. However,
+our original plan of attack ended up being too unwieldy as it used the
+--git-dir directive to do the magic instead of symlinks.
+
+Graham Forest <vitaminmoo@obsoleet.org>
+Gavin McQuillan <gavin@omnifario.us>

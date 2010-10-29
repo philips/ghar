@@ -1,0 +1,290 @@
+#!/usr/bin/env python
+#
+# Copyright (C) 2010 Brandon Philips <brandon@ifup.org>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 as
+# published by the Free Software Foundation.
+# 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
+
+""" ghar: manage dotfiles for your $HOME
+"""
+__author__ =  'Brandon Philips <brandon@ifup.org>'
+__version__=  '1'
+
+
+import argparse
+import sys
+import os
+import re
+from urlparse import urlparse
+import subprocess
+from stat import *
+
+repos = []
+
+argp = argparse.ArgumentParser(description='manage your dotfiles.')
+argp_sub = argp.add_subparsers(title='ghar commands')
+
+class NoGitException(Exception):
+    pass
+
+class Link:
+    def install(self):
+        status = self._target_check()
+        
+        if self.installed:
+            return (True, "ok")
+        if self.target_clear:
+            os.symlink(self.path, self.target)
+            return (True, "installed")
+        else:
+            return (False, "%s exists" % self.target)
+
+    def uninstall(self):
+        status = self._target_check()
+        
+        if self.installed:
+            os.unlink(self.target)
+            return (True, "ok")
+        elif self.target_clear:
+            return (False, "%s no such file" % self.target)
+        else:
+            return (False, "%s is not a ghar link" % self.target)
+
+    def status(self):
+        status = self._target_check()
+        if status == "ok":
+            return (True, status)
+        else:
+            return (False, status)
+
+    def _target_check(self):
+        self.target_clear = False
+        self.installed = False
+
+        if self.target_mode == None:
+            self.target_clear = True
+            return "no such file"
+        elif S_ISDIR(self.target_mode):
+            return "directory"
+        elif S_ISREG(self.target_mode):
+            return "file"
+        elif S_ISLNK(self.target_mode):
+            link = os.readlink(self.target)
+            if link != self.path:
+                return "link to %s" % link
+            else:
+                self.installed = True
+                return "ok"
+        else:
+            return "unknown"
+
+    def __str__(self):
+        return self.target
+        
+    def __init__(self, path, collection = True):
+        self.path = path
+        self.basename = os.path.basename(path)
+
+        format = "%s"
+        if not collection: format = ".%s"
+        self.target = os.path.join(os.environ['HOME'], format % self.basename)
+
+        try:
+            self.target_mode = os.lstat(self.target)[ST_MODE]
+        except OSError as e:
+            self.target_mode = None
+
+
+class Repo:
+    """A ghar repo is a git repo either containing dotfiles or 
+       will itself be used as a dotfile directory.
+    """
+    # Ghar repos can either be a "collection" or a directly linked folder
+    # e.g.
+    # oh-my-zsh would be linked to $HOME/.oh-my-zsh
+    # while
+    # mail-config/.mutt
+    # mail-config/.msmtprc
+    # would be linked to $HOME/.mutt $HOME/.msmtprc respectively
+    def _is_collection(self):
+        # dotfiles in repo means a collection filter for .git naturally
+        l = self.ls[:]
+        found_one = False
+        for f in l:
+            if re.match("^\.git.*$", f):
+                self.ls.remove(f)
+            elif re.match("^\..+$", f):
+                found_one = True
+        if found_one: return True
+        return False
+
+    def has_git(self):
+        try:
+            os.listdir(os.path.join(self.path, '.git'))
+            return True
+        except:
+            return False
+
+    def _git_cmd(self, cmd):
+        if not self.has_git():
+            raise NoGitException("%s is not a git repo" % self.path)
+        pipe = subprocess.Popen(cmd, shell=True, cwd=self.path,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT)
+        ret = pipe.communicate()[0]
+        if pipe.returncode != 0: 
+            return (True, ret)
+        return (False, ret)
+
+    def pull(self):
+        cmd = 'git pull'
+        return self._git_cmd(cmd)
+
+    def clean(self):
+        cmd = 'git status -s 2> /dev/null'
+        ok, ret = self._git_cmd(cmd)
+        if len(ret) > 0: return (False, "dirty")
+        return (True, "clean")
+
+    def __str__(self):
+        return self.basename
+
+    def __init__(self, path):
+        self.path = path
+        self.basename = os.path.basename(path)
+        self.ls = os.listdir(path)
+        self.is_collection = self._is_collection()
+        self.links = []
+        if self.is_collection:
+            for i in self.ls:
+                self.links.append(Link(os.path.join(path, i)))
+        else:
+            self.links.append(Link(path, collection = False))
+
+#
+# ghar sub-commands 
+#
+
+argp_list = argp_sub.add_parser('list', help="list all repos")
+def list(args):
+    for repo in repos:
+        print repo
+argp_list.set_defaults(func=list)
+
+argp_add = argp_sub.add_parser('add',
+    help="add a git repo to ghar with git clone")
+argp_add.add_argument('clone_args', metavar='args', nargs='+',
+    help='git clone arguments')
+def add(args):
+    cmd = 'git clone %s' % ' '.join(args.clone_args)
+    print cmd
+    pipe = subprocess.Popen(cmd, shell=True, cwd=args.ghar_dir)
+    pipe.wait()
+argp_add.set_defaults(func=add)
+
+def _git_subcommand(args, action):
+    pull_repos = repos
+    if args.repos:
+        pull_repos = filter(lambda x: str(x) in args.repos, repos)
+
+    for r in pull_repos:
+        try:
+            status, string = getattr(r, action)()
+            print "%s: %s" % (str(r), string)
+        except NoGitException as e:
+            print "%s is not a git repo" % str(r)
+    return 0
+
+argp_pull = argp_sub.add_parser('pull', help='pull all or a few repos')
+argp_pull.add_argument('repos', metavar='repos', nargs='*',
+    help='repos to pull [defaults to pulling all repos]')
+def pull(args):
+    _git_subcommand(args, "pull")
+argp_pull.set_defaults(func=pull)
+
+argp_status = argp_sub.add_parser('status', help='clean/dirty status of repos')
+argp_status.add_argument('repos', metavar='repos', nargs='*',
+    help='repos to check [defaults to checking all repos]')
+def status(args):
+    _git_subcommand(args, "clean")
+argp_status.set_defaults(func=status)
+
+def _link_subcommand(args, action, error_msg):
+    pull_repos = repos
+    if args.repos:
+        pull_repos = filter(lambda x: str(x) in args.repos, repos)
+
+    for repo in repos:
+        if not repo.has_git():
+            print "%s: not a git repo" % str(repo)
+        elif len(repo.links) <= 0:
+            print "%s: has no dotfiles" % str(repo)
+        else:
+            success = True
+            ret = []
+
+
+            print repo.basename
+            for l in repo.links:
+                stat, string = getattr(l, action)()
+                if stat == False: success = False
+                print " %s\t%s" % (string, str(l))
+            if not success:
+                print error_msg % str(repo)
+
+
+argp_install = argp_sub.add_parser('install', help="install symlinks")
+argp_install.add_argument('repos',
+    help='repos to install [defaults to installing all repos]',
+    metavar='repos', nargs='*')
+argp_install.add_argument('--status', help='get status of repo links',
+                            action='store_true')
+def install(args):
+    func = "install"
+    if args.status: func = "status"
+    error = " error: %s is not fully installed"
+    _link_subcommand(args, func, error)
+argp_install.set_defaults(func=install)
+
+argp_uninstall = argp_sub.add_parser('uninstall', help="uninstall symlinks")
+argp_uninstall.add_argument('repos',
+    help='repos to uninstall [defaults to uninstalling all repos]',
+    metavar='repos', nargs='*')
+def uninstall(args):
+    func = "uninstall"
+    error = " error: %s is not installed"
+    _link_subcommand(args, func, error)
+argp_uninstall.set_defaults(func=uninstall)
+
+
+def _init_repos():
+    for root, dirs, files in os.walk(args.ghar_dir):
+        if root == args.ghar_dir:
+            if 'bin' in dirs:
+                dirs.remove('bin')
+            if '.git' in dirs:
+                dirs.remove('.git')
+            for dir in dirs:
+                repos.append(Repo(os.path.join(root, dir)))
+        break
+
+def main(args):
+    # the ghar executable lives in <repo directory>/bin/ghar
+    args.ghar_dir = os.path.dirname(os.path.dirname(sys.argv[0]))
+    _init_repos()
+    args.func(args)
+
+if __name__ == "__main__":
+    args = argp.parse_args()
+    main(args)
