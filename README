@@ -19,10 +19,10 @@ Getting Started
   $ mv ~/.vimrc .
   $ git add .vimrc
   $ git commit -m "vimrc: initial commit"
-  $ ghar install                                            [14:05:47]
+  $ ghar install
     devel
       installed	/home/philips/.vimrc
-  $ ghar install --status                                   [14:08:58]
+  $ ghar install --status
     devel
      ok	/home/philips/.vimrc
 
