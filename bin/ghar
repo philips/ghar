@@ -22,13 +22,18 @@ __author__ =  'Brandon Philips <brandon@ifup.org>'
 __version__=  '1'
 
 
-import argparse
 import sys
 import os
 import re
 from urlparse import urlparse
 import subprocess
 from stat import *
+
+# work around environments missing argparse
+try:
+    import argparse2
+except ImportError:
+    argparse = __import__('argparse_ghar')
 
 repos = []
 
