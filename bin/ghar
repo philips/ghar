@@ -123,11 +123,11 @@ class Repo:
     # mail-config/.msmtprc
     # would be linked to $HOME/.mutt $HOME/.msmtprc respectively
     def _is_collection(self):
-        # dotfiles in repo means a collection filter for .git naturally
+        # dotfiles in repo means a collection
         l = self.ls[:]
         found_one = False
         for f in l:
-            if re.match("^\.git.*$", f):
+            if re.match("^\.git.*$", f) or re.match("^\README.*$", f):
                 self.ls.remove(f)
             elif re.match("^\..+$", f):
                 found_one = True
