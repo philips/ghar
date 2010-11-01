@@ -13,7 +13,9 @@ INSTALL
 
 Getting Started
 ===============
-  $ cd ghar
+  $ cd ghar	# cd into the clone of ghar you made above
+  $ ls
+  bin COPYING README
   $ mkdir devel
   $ cd devel
   $ git init
