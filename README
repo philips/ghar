@@ -1,19 +1,34 @@
 ghar (ghar: home as repositories)
 Brandon Philips <brandon@ifup.org>
 
-ghar can help you manage your $HOME in git using a collection of git
-repos seperated by topic or privacy. For example if you work on a
-variety of machines and want to share your .emacs on github but not your
-.ssh then ghar is for you.
+ghar can help you manage your $HOME in git using a collection of git repos
+seperated by topic or privacy. For example if you work on a variety of
+machines and want to share your .emacs on github but not your .ssh then ghar
+is for you.
+
 
 INSTALL
 =======
+
+ghar aims to be self contained to make it easy to use on machines where you
+may not have root. The clone of ghar you make below contains the ghar tool and
+will be the directory in which you clone all of your dotfile repos.
+
   $ git clone git://ifup.org/philips/ghar.git
   $ export PATH=$PATH:`pwd`/ghar/bin/ # You may wish to make this permanent
 
 Getting Started
 ===============
-  $ cd ghar	# cd into the clone of ghar you made above
+
+Now, lets create a devel repo which will contain your .vimrc config file (or
+any other dotfile you choose). And then have ghar install it.
+
+"ghar repos" are git repositories contained under the root ghar directory. For
+example if you cloned ghar in a directory called $HOME/tools in the INSTALL
+step above you will want to cd into $HOME/tools/ghar now to create your first
+ghar repo called devel:
+
+  $ cd ghar	# cd into the clone of ghar you made in the INSTALL step
   $ ls
   bin COPYING README
   $ mkdir devel
@@ -31,7 +46,10 @@ Getting Started
 
 Adding External Repos
 =====================
-  # While in the base of the ghar directory
+
+Adding an external repo is easy. ghar will do a git clone of the external repo
+into the proper directory and then install the symlinks with two commands:
+
   $ ghar add git://github.com/robbyrussell/oh-my-zsh.git oh-my-zsh
   $ ghar install
     oh-my-zsh
@@ -39,6 +57,7 @@ Adding External Repos
 
 Upgrading a machine
 ===================
+
 To upgrade a machine to the latest version of all of the repos do the
 following:
 
