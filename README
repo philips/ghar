@@ -1,4 +1,5 @@
 ghar (ghar: home as repositories)
+Brandon Philips <brandon@ifup.org>
 
 ghar can help you manage your $HOME in git using a collection of git
 repos seperated by topic or privacy. For example if you work on a
@@ -40,5 +41,5 @@ These two chaps helped me on the original bash implementation. However,
 our original plan of attack ended up being too unwieldy as it used the
 --git-dir directive to do the magic instead of symlinks.
 
-Graham Forest <vitaminmoo@obsoleet.org>
-Gavin McQuillan <gavin@omnifario.us>
+Graham Forest
+Gavin McQuillan
