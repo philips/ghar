@@ -37,6 +37,16 @@ Adding External Repos
     oh-my-zsh
      installed	/home/philips/.oh-my-zsh
 
+Upgrading a machine
+===================
+To upgrade a machine to the latest version of all of the repos do the
+following:
+
+  $ ghar pull		# pull in all repos
+  $ ghar install	# install any new files
+
+DONE! Enjoy the latest version of your configs.
+
 Thanks
 ======
 These two chaps helped me on the original bash implementation. However,
