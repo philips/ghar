@@ -31,7 +31,7 @@ from stat import *
 
 # work around environments missing argparse
 try:
-    import argparse2
+    import argparse
 except ImportError:
     argparse = __import__('argparse_ghar')
 
