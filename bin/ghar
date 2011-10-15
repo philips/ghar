@@ -127,7 +127,7 @@ class Repo:
         l = self.ls[:]
         found_one = False
         for f in l:
-            if re.match("^\.git.*$", f) or re.match("^\README.*$", f):
+            if re.match("^\.git$", f) or re.match("^\README.*$", f):
                 self.ls.remove(f)
             elif re.match("^\..+$", f):
                 found_one = True
