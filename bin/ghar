@@ -127,7 +127,8 @@ class Repo:
         l = self.ls[:]
         found_one = False
         for f in l:
-            if re.match("^\.git.*$", f) or re.match("^\README.*$", f):
+            # global .gitconfig as a config is OK but not .git/ or .gitignore
+            if re.match("^\.git(ignore)?$", f) or re.match("^\README.*$", f):
                 self.ls.remove(f)
             elif re.match("^\..+$", f):
                 found_one = True
