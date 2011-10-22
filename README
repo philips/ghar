@@ -17,6 +17,12 @@ will be the directory in which you clone all of your dotfile repos.
   $ git clone git://ifup.org/philips/ghar.git
   $ export PATH=$PATH:`pwd`/ghar/bin/ # You may wish to make this permanent
 
+If you'd like bash tab completion, either move the included
+ghar-bash-completion.sh into /etc/bash_completion.d/ (requires root),
+or source the file directly:
+
+  $ . `pwd`/ghar/ghar-bash-completion.sh
+
 Getting Started
 ===============
 
