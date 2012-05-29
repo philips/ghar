@@ -157,7 +157,7 @@ class Repo:
         cmd = 'git pull'
         return self._git_cmd(cmd)
     
-    def push(self)
+    def push(self):
         cmd = 'git push'
         return self._git_cmd(cmd)
 
