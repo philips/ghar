@@ -156,6 +156,10 @@ class Repo:
     def pull(self):
         cmd = 'git pull'
         return self._git_cmd(cmd)
+    
+    def push(self)
+        cmd = 'git push'
+        return self._git_cmd(cmd)
 
     def clean(self):
         cmd = 'git status -s 2> /dev/null'
