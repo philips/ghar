@@ -161,6 +161,17 @@ class Repo:
         cmd = 'git push'
         return self._git_cmd(cmd)
 
+    def commit(self):
+        cmd = 'git add . && git commit -m "Changes up to $(date -Imin)."'
+        return self._git_cmd(cmd)
+    
+    def cap(self):
+        failure1, ret1 = self.commit()
+        if failure1:
+            return (failure1, ret1)
+        else:
+            return self.push()
+
     def clean(self):
         cmd = 'git status -s 2> /dev/null'
         ok, ret = self._git_cmd(cmd)
@@ -229,6 +240,20 @@ argp_push.add_argument('repos', metavar='repos', nargs='*',
 def push(args):
     _git_subcommand(args, "push")
 argp_push.set_defaults(func=push)
+
+argp_commit = argp_sub.add_parser('commit', help='commit all or a few repos')
+argp_commit.add_argument('repos', metavar='repos', nargs='*',
+    help='repos to commit [defaults to committing all repos]')
+def commit(args):
+    _git_subcommand(args, "commit")
+argp_commit.set_defaults(func=commit)
+
+argp_cap = argp_sub.add_parser('cap', help='commit and push all or a few repos')
+argp_cap.add_argument('repos', metavar='repos', nargs='*',
+    help='repos to cap [defaults to committing and pushing all repos]')
+def cap(args):
+    _git_subcommand(args, "cap")
+argp_cap.set_defaults(func=cap)
 
 argp_status = argp_sub.add_parser('status', help='clean/dirty status of repos')
 argp_status.add_argument('repos', metavar='repos', nargs='*',
