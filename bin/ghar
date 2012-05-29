@@ -223,6 +223,13 @@ def pull(args):
     _git_subcommand(args, "pull")
 argp_pull.set_defaults(func=pull)
 
+argp_push = argp_sub.add_parser('push', help='push all or a few repos')
+argp_push.add_argument('repos', metavar='repos', nargs='*',
+    help='repos to push [defaults to pushing all repos]')
+def push(args):
+    _git_subcommand(args, "push")
+argp_push.set_defaults(func=push)
+
 argp_status = argp_sub.add_parser('status', help='clean/dirty status of repos')
 argp_status.add_argument('repos', metavar='repos', nargs='*',
     help='repos to check [defaults to checking all repos]')
