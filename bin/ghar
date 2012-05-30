@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 #
 # Copyright (C) 2010 Brandon Philips <brandon@ifup.org>
 #
@@ -162,7 +162,7 @@ class Repo:
         return self._git_cmd(cmd)
 
     def commit(self):
-        cmd = 'git add . && git commit -m "Changes up to $(date -Imin)."'
+        cmd = 'git add -A . && git commit -m "Changes up to $(date -Imin)."'
         return self._git_cmd(cmd)
     
     def cap(self):
