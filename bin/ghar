@@ -5,12 +5,12 @@
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as
 # published by the Free Software Foundation.
-# 
+#
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
@@ -46,7 +46,7 @@ class NoGitException(Exception):
 class Link:
     def install(self):
         status = self._target_check()
-        
+
         if self.installed:
             return (True, "ok")
         if self.target_clear:
@@ -57,7 +57,7 @@ class Link:
 
     def uninstall(self):
         status = self._target_check()
-        
+
         if self.installed:
             os.unlink(self.target)
             return (True, "ok")
@@ -96,7 +96,7 @@ class Link:
 
     def __str__(self):
         return self.target
-        
+
     def __init__(self, path, collection = True):
         self.path = path
         self.basename = os.path.basename(path)
@@ -112,7 +112,7 @@ class Link:
 
 
 class Repo:
-    """A ghar repo is a git repo either containing dotfiles or 
+    """A ghar repo is a git repo either containing dotfiles or
        will itself be used as a dotfile directory.
     """
     # Ghar repos can either be a "collection" or a directly linked folder
@@ -149,7 +149,7 @@ class Repo:
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT)
         ret = pipe.communicate()[0]
-        if pipe.returncode != 0: 
+        if pipe.returncode != 0:
             return (True, ret)
         return (False, ret)
 
@@ -179,7 +179,7 @@ class Repo:
             self.links.append(Link(path, collection = False))
 
 #
-# ghar sub-commands 
+# ghar sub-commands
 #
 
 argp_list = argp_sub.add_parser('list', help="list all repos")
