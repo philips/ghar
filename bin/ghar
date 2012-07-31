@@ -163,6 +163,25 @@ class Repo:
         if len(ret) > 0: return (False, "dirty")
         return (True, "clean")
 
+    # This function processes all the links in a directory from the repository,
+    # depending on whether the corresponding directory already exists in $HOME.
+    # If the directory _doesn't_ already exist, simply symlink it.
+    # If it _does_ exist, recurse into it and symlink individual files.
+    def list_directory_links(self, path):
+        dir_links = []
+        ls = os.listdir(path)
+        for fname in ls:
+            link = Link(os.path.join(path, fname))
+            ok, link_status = link.status()
+            if link_status == "directory" :
+                new_path = os.path.join(path, fname)
+                dir_links += self.list_directory_links(new_path)
+            elif link_status.startswith("link to "):
+                print "We can't yet handle non-ghar symlinks."
+            else:
+                dir_links.append(Link(os.path.join(path, fname)))
+        return dir_links
+
     def __str__(self):
         return self.basename
 
@@ -173,8 +192,7 @@ class Repo:
         self.is_collection = self._is_collection()
         self.links = []
         if self.is_collection:
-            for i in self.ls:
-                self.links.append(Link(os.path.join(path, i)))
+            self.links += self.list_directory_links(path)
         else:
             self.links.append(Link(path, collection = False))
 
