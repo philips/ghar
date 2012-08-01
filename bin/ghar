@@ -97,9 +97,11 @@ class Link:
     def __str__(self):
         return self.target
 
-    def __init__(self, path, collection = True):
+    def __init__(self, path, collection = True, base = None):
         self.path = path
         self.basename = os.path.basename(path)
+        if base is not None and os.path.isdir(base):
+            self.basename = os.path.relpath(path, base)
 
         format = "%s"
         if not collection: format = ".%s"
@@ -171,15 +173,17 @@ class Repo:
         dir_links = []
         ls = os.listdir(path)
         for fname in ls:
-            link = Link(os.path.join(path, fname))
+            if re.match('^\.git\/?$', fname):
+                continue
+            link = Link(os.path.join(path, fname), base=self.path)
             ok, link_status = link.status()
-            if link_status == "directory" :
+            if link_status == "directory":
                 new_path = os.path.join(path, fname)
                 dir_links += self.list_directory_links(new_path)
             elif link_status.startswith("link to "):
                 print "We can't yet handle non-ghar symlinks."
             else:
-                dir_links.append(Link(os.path.join(path, fname)))
+                dir_links.append(Link(os.path.join(path, fname), base=self.path))
         return dir_links
 
     def __str__(self):
@@ -189,12 +193,15 @@ class Repo:
         self.path = path
         self.basename = os.path.basename(path)
         self.ls = os.listdir(path)
-        self.is_collection = self._is_collection()
         self.links = []
+
+        # Checking whether it's a collection:
+        # (NB: this has the side-effect of pruning '.git/'!)
+        self.is_collection = self._is_collection()
         if self.is_collection:
             self.links += self.list_directory_links(path)
         else:
-            self.links.append(Link(path, collection = False))
+            self.links.append(Link(path, collection = False, base = self.path))
 
 #
 # ghar sub-commands
