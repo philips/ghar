@@ -72,6 +72,19 @@ following:
 
 DONE! Enjoy the latest version of your configs.
 
+KNOWN ISSUE
+===========
+
+ghar has known issue when the relative path 'bin' is in the PATH
+such that ghar is found through this relative path and Python's
+sys.argv[0] returns the relative path 'bin/ghar' rather than
+the absolute path. For example, if you use the Boxen default
+config, it puts 'bin' at the beginning of your PATH.
+
+The workaround is to either remove the 'bin' relative path from
+your PATH or put <absolute-ghar-location>/bin in your path before
+than the 'bin' relative path.
+
 Thanks
 ======
 These two chaps helped me on the original bash implementation. However,
