@@ -312,6 +312,8 @@ def _init_repos():
 
 def main(args):
     # the ghar executable lives in <repo directory>/bin/ghar
+    if not sys.argv[0].startswith('/'):
+        sys.stderr.write("Unable to determine full path to ghar (relative path 'bin' in your PATH?); ghar may misbehave - sorry\n");
     args.ghar_dir = os.path.dirname(os.path.dirname(sys.argv[0]))
     _init_repos()
     if len(repos) <= 0:
