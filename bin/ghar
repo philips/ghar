@@ -256,7 +256,7 @@ def _link_subcommand(args, action, error_msg):
     if args.repos:
         pull_repos = filter(lambda x: str(x) in args.repos, repos)
 
-    for repo in repos:
+    for repo in pull_repos:
         if not repo.has_git():
             print "%s: not a git repo" % str(repo)
         elif len(repo.links) <= 0:
