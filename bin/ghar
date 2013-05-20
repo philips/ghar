@@ -25,6 +25,8 @@ __version__=  '1'
 import sys
 import os
 import re
+import pipes
+import datetime
 from urlparse import urlparse
 import subprocess
 from stat import *
@@ -158,23 +160,23 @@ class Repo:
     def pull(self, args):
         cmd = 'git pulsl'
         return self._git_cmd(cmd)
-    
+
     def push(self, args):
         cmd = 'git push'
         return self._git_cmd(cmd)
 
     def commit(self, args):
+        if self.is_clean():
+            return (True, "nothing to commit (working directory clean)")
         message = ''
-        cmd = 'git add -A . && git commit %s'
         if args.auto:
-            message = '"Changes up to $(date -Imin)."'
+            now = datetime.datetime.now()
+            message = "Changes up to %s" % now.strftime("%Y-$m-%d %H:%I")
         elif args.message:
-            message = "'%s'" % args.message
-        else:
-            message = False
-        cmd = cmd % (('-m ' if message else '') + message)
+            message = args.message
+        cmd = 'git add -A . && git commit -m ' + pipes.quote(message)
         return self._git_cmd(cmd)
-    
+
     def cap(self, args):
         failure1, ret1 = self.commit(args)
         if failure1:
@@ -182,11 +184,14 @@ class Repo:
         else:
             return self.push(args)
 
-    def clean(self):
+    def clean(self, args):
         cmd = 'git status -s 2> /dev/null'
         ok, ret = self._git_cmd(cmd)
-        if len(ret) > 0: return (False, "dirty")
+        if len(ret) > 0: return (False, "dirty", ret)
         return (True, "clean")
+
+    def is_clean(self):
+        return self.clean(None)[0]
 
     # This function processes all the links in a directory from the repository,
     # depending on whether the corresponding directory already exists in $HOME.
@@ -254,8 +259,12 @@ def _git_subcommand(args, action):
 
     for r in pull_repos:
         try:
-            status, string = getattr(r, action)(args)
+            resp = getattr(r, action)(args)
+            status, string = resp[:2]
+            extra = resp[2:]
             print "%s: %s" % (str(r), string)
+            if extra:
+                print extra[0]
         except NoGitException as e:
             print "%s is not a git repo" % str(r)
     return 0
@@ -277,11 +286,14 @@ argp_push.set_defaults(func=push)
 argp_commit = argp_sub.add_parser('commit', help='commit all or a few repos')
 argp_commit.add_argument('repos', metavar='repos', nargs='*',
     help='repos to commit [defaults to committing all repos]')
-argp_commit.add_argument('-m','--message', metavar='message', nargs=1,
+argp_commit.add_argument('-m','--message', metavar='message',
     help='commit message [defaults to opening an editor]')
 argp_commit.add_argument('-a','--auto',
     help='automatically generate commit message from current date+time [defaults to False]')
 def commit(args):
+    if not args.message and not args.auto:
+        print "error: must give a commit message; use -m/--message or -a/--auto"
+        return
     _git_subcommand(args, "commit")
 argp_commit.set_defaults(func=commit)
 
