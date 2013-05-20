@@ -204,7 +204,7 @@ class Repo:
                 new_path = os.path.join(path, fname)
                 dir_links += self.list_directory_links(new_path)
             elif link_status.startswith("link to "):
-                print "We can't yet handle non-ghar symlinks."
+                print fname,"- we can't yet non-ghar symlinks."
             else:
                 dir_links.append(Link(os.path.join(path, fname), base=self.path))
         return dir_links
