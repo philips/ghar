@@ -155,9 +155,32 @@ class Repo:
             return (True, ret)
         return (False, ret)
 
-    def pull(self):
-        cmd = 'git pull'
+    def pull(self, args):
+        cmd = 'git pulsl'
         return self._git_cmd(cmd)
+    
+    def push(self, args):
+        cmd = 'git push'
+        return self._git_cmd(cmd)
+
+    def commit(self, args):
+        message = ''
+        cmd = 'git add -A . && git commit %s'
+        if args.auto:
+            message = '"Changes up to $(date -Imin)."'
+        elif args.message:
+            message = "'%s'" % args.message
+        else:
+            message = False
+        cmd = cmd % (('-m ' if message else '') + message)
+        return self._git_cmd(cmd)
+    
+    def cap(self, args):
+        failure1, ret1 = self.commit(args)
+        if failure1:
+            return (failure1, ret1)
+        else:
+            return self.push(args)
 
     def clean(self):
         cmd = 'git status -s 2> /dev/null'
@@ -231,7 +254,7 @@ def _git_subcommand(args, action):
 
     for r in pull_repos:
         try:
-            status, string = getattr(r, action)()
+            status, string = getattr(r, action)(args)
             print "%s: %s" % (str(r), string)
         except NoGitException as e:
             print "%s is not a git repo" % str(r)
@@ -243,6 +266,31 @@ argp_pull.add_argument('repos', metavar='repos', nargs='*',
 def pull(args):
     _git_subcommand(args, "pull")
 argp_pull.set_defaults(func=pull)
+
+argp_push = argp_sub.add_parser('push', help='push all or a few repos')
+argp_push.add_argument('repos', metavar='repos', nargs='*',
+    help='repos to push [defaults to pushing all repos]')
+def push(args):
+    _git_subcommand(args, "push")
+argp_push.set_defaults(func=push)
+
+argp_commit = argp_sub.add_parser('commit', help='commit all or a few repos')
+argp_commit.add_argument('repos', metavar='repos', nargs='*',
+    help='repos to commit [defaults to committing all repos]')
+argp_commit.add_argument('-m','--message', metavar='message', nargs=1,
+    help='commit message [defaults to opening an editor]')
+argp_commit.add_argument('-a','--auto',
+    help='automatically generate commit message from current date+time [defaults to False]')
+def commit(args):
+    _git_subcommand(args, "commit")
+argp_commit.set_defaults(func=commit)
+
+argp_cap = argp_sub.add_parser('cap', help='commit and push all or a few repos')
+argp_cap.add_argument('repos', metavar='repos', nargs='*',
+    help='repos to cap [defaults to committing and pushing all repos]')
+def cap(args):
+    _git_subcommand(args, "cap")
+argp_cap.set_defaults(func=cap)
 
 argp_status = argp_sub.add_parser('status', help='clean/dirty status of repos')
 argp_status.add_argument('repos', metavar='repos', nargs='*',
