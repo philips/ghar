@@ -300,7 +300,14 @@ argp_commit.set_defaults(func=commit)
 argp_cap = argp_sub.add_parser('cap', help='commit and push all or a few repos')
 argp_cap.add_argument('repos', metavar='repos', nargs='*',
     help='repos to cap [defaults to committing and pushing all repos]')
+argp_cap.add_argument('-m','--message', metavar='message',
+    help='commit message [defaults to opening an editor]')
+argp_cap.add_argument('-a','--auto', action="store_true", default=False,
+    help='automatically generate commit message from current date+time [defaults to False]')
 def cap(args):
+    if not args.message and not args.auto:
+        print "error: must give a commit message; use -m/--message or -a/--auto"
+        return
     _git_subcommand(args, "cap")
 argp_cap.set_defaults(func=cap)
 
