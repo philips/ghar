@@ -288,7 +288,7 @@ argp_commit.add_argument('repos', metavar='repos', nargs='*',
     help='repos to commit [defaults to committing all repos]')
 argp_commit.add_argument('-m','--message', metavar='message',
     help='commit message [defaults to opening an editor]')
-argp_commit.add_argument('-a','--auto',
+argp_commit.add_argument('-a','--auto', action="store_true", default=False,
     help='automatically generate commit message from current date+time [defaults to False]')
 def commit(args):
     if not args.message and not args.auto:
