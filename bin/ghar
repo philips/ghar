@@ -158,7 +158,7 @@ class Repo:
         return (False, ret)
 
     def pull(self, args):
-        cmd = 'git pulsl'
+        cmd = 'git pull'
         return self._git_cmd(cmd)
 
     def push(self, args):
