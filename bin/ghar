@@ -25,6 +25,8 @@ __version__=  '1'
 import sys
 import os
 import re
+import pipes
+import datetime
 from urlparse import urlparse
 import subprocess
 from stat import *
@@ -155,15 +157,41 @@ class Repo:
             return (True, ret)
         return (False, ret)
 
-    def pull(self):
+    def pull(self, args):
         cmd = 'git pull'
         return self._git_cmd(cmd)
 
-    def clean(self):
+    def push(self, args):
+        cmd = 'git push'
+        return self._git_cmd(cmd)
+
+    def commit(self, args):
+        if self.is_clean():
+            return (True, "nothing to commit (working directory clean)")
+        message = ''
+        if args.auto:
+            now = datetime.datetime.now()
+            message = "Changes up to %s" % now.strftime("%Y-$m-%d %H:%I")
+        elif args.message:
+            message = args.message
+        cmd = 'git add -A . && git commit -m ' + pipes.quote(message)
+        return self._git_cmd(cmd)
+
+    def cap(self, args):
+        failure1, ret1 = self.commit(args)
+        if failure1:
+            return (failure1, ret1)
+        else:
+            return self.push(args)
+
+    def clean(self, args):
         cmd = 'git status -s 2> /dev/null'
         ok, ret = self._git_cmd(cmd)
-        if len(ret) > 0: return (False, "dirty")
+        if len(ret) > 0: return (False, "dirty", ret)
         return (True, "clean")
+
+    def is_clean(self):
+        return self.clean(None)[0]
 
     # This function processes all the links in a directory from the repository,
     # depending on whether the corresponding directory already exists in $HOME.
@@ -181,7 +209,7 @@ class Repo:
                 new_path = os.path.join(path, fname)
                 dir_links += self.list_directory_links(new_path)
             elif link_status.startswith("link to "):
-                print "We can't yet handle non-ghar symlinks."
+                print fname,"- we can't yet non-ghar symlinks."
             else:
                 dir_links.append(Link(os.path.join(path, fname), base=self.path))
         return dir_links
@@ -231,8 +259,12 @@ def _git_subcommand(args, action):
 
     for r in pull_repos:
         try:
-            status, string = getattr(r, action)()
+            resp = getattr(r, action)(args)
+            status, string = resp[:2]
+            extra = resp[2:]
             print "%s: %s" % (str(r), string)
+            if extra:
+                print extra[0]
         except NoGitException as e:
             print "%s is not a git repo" % str(r)
     return 0
@@ -243,6 +275,41 @@ argp_pull.add_argument('repos', metavar='repos', nargs='*',
 def pull(args):
     _git_subcommand(args, "pull")
 argp_pull.set_defaults(func=pull)
+
+argp_push = argp_sub.add_parser('push', help='push all or a few repos')
+argp_push.add_argument('repos', metavar='repos', nargs='*',
+    help='repos to push [defaults to pushing all repos]')
+def push(args):
+    _git_subcommand(args, "push")
+argp_push.set_defaults(func=push)
+
+argp_commit = argp_sub.add_parser('commit', help='commit all or a few repos')
+argp_commit.add_argument('repos', metavar='repos', nargs='*',
+    help='repos to commit [defaults to committing all repos]')
+argp_commit.add_argument('-m','--message', metavar='message',
+    help='commit message [defaults to opening an editor]')
+argp_commit.add_argument('-a','--auto', action="store_true", default=False,
+    help='automatically generate commit message from current date+time [defaults to False]')
+def commit(args):
+    if not args.message and not args.auto:
+        print "error: must give a commit message; use -m/--message or -a/--auto"
+        return
+    _git_subcommand(args, "commit")
+argp_commit.set_defaults(func=commit)
+
+argp_cap = argp_sub.add_parser('cap', help='commit and push all or a few repos')
+argp_cap.add_argument('repos', metavar='repos', nargs='*',
+    help='repos to cap [defaults to committing and pushing all repos]')
+argp_cap.add_argument('-m','--message', metavar='message',
+    help='commit message [defaults to opening an editor]')
+argp_cap.add_argument('-a','--auto', action="store_true", default=False,
+    help='automatically generate commit message from current date+time [defaults to False]')
+def cap(args):
+    if not args.message and not args.auto:
+        print "error: must give a commit message; use -m/--message or -a/--auto"
+        return
+    _git_subcommand(args, "cap")
+argp_cap.set_defaults(func=cap)
 
 argp_status = argp_sub.add_parser('status', help='clean/dirty status of repos')
 argp_status.add_argument('repos', metavar='repos', nargs='*',
