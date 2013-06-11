@@ -312,7 +312,8 @@ def _init_repos():
 
 def main(args):
     # the ghar executable lives in <repo directory>/bin/ghar
-    args.ghar_dir = os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0])))
+    args.ghar_dir = os.path.dirname(os.path.dirname(
+        os.path.realpath(sys.argv[0])))
     _init_repos()
     if len(repos) <= 0:
         sys.stderr.write("No repos found in %s\n" % args.ghar_dir)
