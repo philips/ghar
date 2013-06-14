@@ -100,7 +100,7 @@ class Link:
     def __init__(self, path, collection = True, base = None):
         self.path = path
         self.basename = os.path.basename(path)
-        if base is not None and os.path.isdir(base):
+        if collection and base is not None and os.path.isdir(base):
             self.basename = os.path.relpath(path, base)
 
         format = "%s"
