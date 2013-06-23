@@ -25,7 +25,10 @@ __version__=  '1'
 import sys
 import os
 import re
-from urllib import parse
+try: # Assume Python3
+    from urllib import parse
+except ImportError: # Support Python2
+    from urlparse import urlparse
 import subprocess
 from stat import *
 
