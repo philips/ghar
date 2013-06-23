@@ -320,7 +320,11 @@ def main(args):
     if len(repos) <= 0:
         sys.stderr.write("No repos found in %s\n" % args.ghar_dir)
         sys.stderr.write("Please read %s/README\n" % args.ghar_dir)
-    args.func(args)
+    # Python3 doesn't error on parse_args with no subcommand.
+    if 'func' in args:
+        args.func(args)
+    else:
+        argp.print_help()
 
 if __name__ == "__main__":
     args = argp.parse_args()
