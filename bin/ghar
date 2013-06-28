@@ -114,7 +114,7 @@ class Link:
         self.path = path
         self.basename = os.path.basename(path)
         self.ignore = ignore
-        if base is not None and os.path.isdir(base):
+        if collection and base is not None and os.path.isdir(base):
             self.basename = os.path.relpath(path, base)
 
         format = "%s"
