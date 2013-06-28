@@ -24,6 +24,7 @@ __version__=  '1'
 
 import sys
 import os
+import fnmatch
 import re
 from urlparse import urlparse
 import subprocess
@@ -49,6 +50,8 @@ class Link:
 
         if self.installed:
             return (True, "ok")
+        if self._ignored():
+            return (True, "skip")
         if self.target_clear:
             os.symlink(self.path, self.target)
             return (True, "installed")
@@ -94,12 +97,20 @@ class Link:
         else:
             return "unknown"
 
+    def _ignored(self):
+        """Return True if this link should be ignored."""
+        for pat in self.ignore:
+            if fnmatch.fnmatch(self.basename, pat):
+                return True
+        return False
+
     def __str__(self):
         return self.target
 
-    def __init__(self, path, collection = True, base = None):
+    def __init__(self, path, collection=True, base=None, ignore=[]):
         self.path = path
         self.basename = os.path.basename(path)
+        self.ignore = ignore
         if base is not None and os.path.isdir(base):
             self.basename = os.path.relpath(path, base)
 
@@ -183,8 +194,19 @@ class Repo:
             elif link_status.startswith("link to "):
                 print "We can't yet handle non-ghar symlinks."
             else:
-                dir_links.append(Link(os.path.join(path, fname), base=self.path))
+                dir_links.append(Link(os.path.join(path, fname), base=self.path, ignore=self.ignore))
         return dir_links
+
+    def load_ignore(self):
+        """
+        Load .gharignore. If it exists, it's a list of fnmatch patterns of
+        files in the repo to ignore and not symlink.
+        """
+        self.ignore = ['.gharignore']
+        ignorefile = os.path.join(self.path, ".gharignore")
+        if os.path.exists(ignorefile):
+            lines = (line.strip() for line in open(ignorefile))
+            self.ignore.extend(line for line in lines if line and line[0] != '#')
 
     def __str__(self):
         return self.basename
@@ -199,6 +221,7 @@ class Repo:
         # (NB: this has the side-effect of pruning '.git/'!)
         self.is_collection = self._is_collection()
         if self.is_collection:
+            self.load_ignore()
             self.links += self.list_directory_links(path)
         else:
             self.links.append(Link(path, collection = False, base = self.path))
