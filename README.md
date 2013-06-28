@@ -81,3 +81,12 @@ our original plan of attack ended up being too unwieldy as it used the
 
 - Graham Forest
 - Gavin McQuillan
+
+Contributors
+============
+- Jeff Wong
+- Matthew Batema
+- Torne Wuff
+- Jacob Kaplan-Moss
+- aff0
+- Charles R. Hogg III
