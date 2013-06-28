@@ -1,5 +1,5 @@
 ghar (ghar: home as repositories)
----------------------------------
+=================================
 
 ghar can help you manage your $HOME in git using a collection of git repos
 seperated by topic or privacy. For example if you work on a variety of
@@ -9,7 +9,7 @@ is for you.
 Brandon Philips <brandon@ifup.org>
 
 INSTALL
-=======
+-------
 
 ghar aims to be self contained to make it easy to use on machines where you
 may not have root. The clone of ghar you make below contains the ghar tool and
@@ -25,7 +25,7 @@ or source the file directly:
     $ . `pwd`/ghar/ghar-bash-completion.sh
 
 Getting Started
-===============
+---------------
 
 Now, lets create a devel repo which will contain your .vimrc config file (or
 any other dotfile you choose). And then have ghar install it.
@@ -52,7 +52,7 @@ ghar repo called devel:
        ok	/home/philips/.vimrc
 
 Adding External Repos
-=====================
+---------------------
 
 Adding an external repo is easy. ghar will do a git clone of the external repo
 into the proper directory and then install the symlinks with two commands:
@@ -63,7 +63,7 @@ into the proper directory and then install the symlinks with two commands:
        installed	/home/philips/.oh-my-zsh
 
 Upgrading a machine
-===================
+-------------------
 
 To upgrade a machine to the latest version of all of the repos do the
 following:
@@ -74,7 +74,7 @@ following:
 DONE! Enjoy the latest version of your configs.
 
 Thanks
-======
+------
 These two chaps helped me on the original bash implementation. However,
 our original plan of attack ended up being too unwieldy as it used the
 --git-dir directive to do the magic instead of symlinks.
@@ -83,7 +83,7 @@ our original plan of attack ended up being too unwieldy as it used the
 - Gavin McQuillan
 
 Contributors
-============
+------------
 - Jeff Wong
 - Matthew Batema
 - Torne Wuff
