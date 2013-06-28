@@ -79,5 +79,5 @@ These two chaps helped me on the original bash implementation. However,
 our original plan of attack ended up being too unwieldy as it used the
 --git-dir directive to do the magic instead of symlinks.
 
-Graham Forest
-Gavin McQuillan
+- Graham Forest
+- Gavin McQuillan
