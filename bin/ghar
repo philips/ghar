@@ -55,10 +55,10 @@ class Link:
     def install(self):
         status = self._target_check()
 
+        if status == "skip":
+            return (True, "skip")
         if self.installed:
             return (True, "ok")
-        if self._ignored():
-            return (True, "skip")
         if self.target_clear:
             os.symlink(self.path, self.target)
             return (True, "installed")
@@ -68,6 +68,8 @@ class Link:
     def uninstall(self):
         status = self._target_check()
 
+        if status == "skip":
+            return (True, "skip")
         if self.installed:
             os.unlink(self.target)
             return (True, "ok")
@@ -78,7 +80,7 @@ class Link:
 
     def status(self):
         status = self._target_check()
-        if status == "ok":
+        if status == "ok" or status == "skip":
             return (True, status)
         else:
             return (False, status)
@@ -87,6 +89,8 @@ class Link:
         self.target_clear = False
         self.installed = False
 
+        if self._ignored():
+            return "skip"
         if self.target_mode == None:
             self.target_clear = True
             return "no such file"
