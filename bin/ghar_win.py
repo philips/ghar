@@ -175,6 +175,29 @@ def symlink(source, link_name):
         raise ctypes.WinError()
 
 
+class MockLstatResult:
+    def __init__(self, st_mode):
+        self.st_mode = st_mode
+
+    def __getitem__(self, y):
+        if y == 0:
+            return self.st_mode
+        else:
+            raise AttributeError('Invalid index for MockLstatResult object')
+
+
+def lstat(path):
+    """Windows-symlink-aware implementation of os.lstat
+    """
+    import stat
+    s = _orig_lstat(path)
+    if islink(path):
+        return MockLstatResult(s.st_mode | stat.S_IFLNK)
+    return s
+
+_orig_lstat    = os.lstat
+
 os.symlink  = symlink
 os.islink   = islink
 os.readlink = readlink
+os.lstat    = lstat
