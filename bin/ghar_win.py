@@ -140,9 +140,9 @@ def readlink(fpath):
         return None
 
     # Open the file correctly depending on the string type.
-    handle = CreateFileW(fpath, GENERIC_READ, 0, None, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT, 0) \
-                if type(fpath) == unicode else \
-            CreateFile(fpath, GENERIC_READ, 0, None, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT, 0)
+    handle = CreateFileW(fpath, GENERIC_READ, 0, None, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT|FILE_FLAG_BACKUP_SEMANTICS, 0) \
+             if type(fpath) == unicode else \
+              CreateFile(fpath, GENERIC_READ, 0, None, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT|FILE_FLAG_BACKUP_SEMANTICS, 0)
 
     # MAXIMUM_REPARSE_DATA_BUFFER_SIZE = 16384 = (16*1024)
     buffer = DeviceIoControl(handle, FSCTL_GET_REPARSE_POINT, None, 16*1024)
@@ -207,7 +207,7 @@ def lstat(path):
     import stat
     s = _orig_lstat(path)
     if islink(path):
-        return MockLstatResult(s.st_mode | stat.S_IFLNK)
+        return MockLstatResult(stat.S_IFLNK)
     return s
 
 

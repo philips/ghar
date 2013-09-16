@@ -69,7 +69,11 @@ class Link:
         status = self._target_check()
 
         if self.installed:
-            os.unlink(self.target)
+            if os.name == 'nt' and os.path.isdir(self.target):
+                # Removing symlinked directories requires "rmdir" on Windows
+                os.rmdir(self.target)
+            else:
+                os.unlink(self.target)
             return (True, "ok")
         elif self.target_clear:
             return (False, "%s no such file" % self.target)
