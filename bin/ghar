@@ -39,6 +39,10 @@ try:
 except ImportError:
     argparse = __import__('argparse_ghar')
 
+# work around Python-on-Windows' lack of symlink functions
+if os.name == 'nt':
+    import ghar_win
+
 repos = []
 
 argp = argparse.ArgumentParser(description='manage your dotfiles.')
