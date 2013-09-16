@@ -1,13 +1,20 @@
 """Windows implementations of symlink-related functions
 
-Code by 'juntalis' @ http://stackoverflow.com/a/7924557/1037
+This module patches the following functions in the 'os' module:
+os.symlink; os.islink; os.readlink; os.lstat.
+
+Note that these functions are written specifically to work with Ghar, and
+may need to be generalized in order to work in other contexts.
+
+Most code by 'juntalis' @ http://stackoverflow.com/a/7924557/1037
 and David Leonard @ http://stackoverflow.com/a/4388195/1037
 """
+
 import os
 from win32file import *
 from winioctlcon import FSCTL_GET_REPARSE_POINT
 
-__all__ = ['islink', 'readlink', 'symlink']
+__all__ = ['islink', 'readlink', 'symlink', 'lstat']
 
 # Win32file doesn't seem to have this attribute.
 FILE_ATTRIBUTE_REPARSE_POINT = 1024
@@ -19,7 +26,7 @@ GENERIC = 'generic'
 
 
 def islink(fpath):
-    """Windows islink implementation.
+    """Windows islink implementation
     """
     if GetFileAttributes(fpath) & FILE_ATTRIBUTE_REPARSE_POINT == FILE_ATTRIBUTE_REPARSE_POINT:
         return True
@@ -176,6 +183,11 @@ def symlink(source, link_name):
 
 
 class MockLstatResult:
+    """Replacement for nt.stat_result
+
+    Very simple replacement, since Ghar only uses the "st_mode" attribute.
+    We need it because nt.stat_result has read-only attributes.
+    """
     def __init__(self, st_mode):
         self.st_mode = st_mode
 
@@ -183,17 +195,21 @@ class MockLstatResult:
         if y == 0:
             return self.st_mode
         else:
-            raise AttributeError('Invalid index for MockLstatResult object')
+            raise AttributeError('MockLstatResult object does not have a %s attribute' % y)
 
 
 def lstat(path):
     """Windows-symlink-aware implementation of os.lstat
+
+    Returns a MockLstatResult object, which contains only the tiny little bit
+    of information about path that Ghar needs.
     """
     import stat
     s = _orig_lstat(path)
     if islink(path):
         return MockLstatResult(s.st_mode | stat.S_IFLNK)
     return s
+
 
 _orig_lstat    = os.lstat
 
