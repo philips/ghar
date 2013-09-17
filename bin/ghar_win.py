@@ -211,9 +211,22 @@ def lstat(path):
     return s
 
 
+_orig_unlink = None
+
+def unlink(path):
+    global _orig_unlink
+    if islink(path) and os.path.isdir(path):
+        # Unlinking requires "rmdir" on Windows
+        os.rmdir(path)
+    else:
+        _orig_unlink(path)
+
+
 _orig_lstat    = os.lstat
+_orig_unlink   = os.unlink
 
 os.symlink  = symlink
 os.islink   = islink
 os.readlink = readlink
 os.lstat    = lstat
+os.unlink   = unlink
