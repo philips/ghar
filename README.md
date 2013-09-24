@@ -73,6 +73,22 @@ following:
 
 DONE! Enjoy the latest version of your configs.
 
+Ignoring Files
+--------------
+
+ghar looks for a `.gharignore` file in each ghar repo it installs.
+This file lists, one per line,
+[fnmatch-style](http://docs.python.org/2/library/fnmatch.html)
+patterns (e.g. `README.*`, `*.txt`, etc.) to ignore when creating
+symlinks.
+
+Example `.gharignore`:
+```
+LICENSE
+README.*
+.gitmodules
+```
+
 Thanks
 ------
 These two chaps helped me on the original bash implementation. However,
