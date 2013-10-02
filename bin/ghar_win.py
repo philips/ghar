@@ -1,20 +1,24 @@
-"""Windows implementations of symlink-related functions
+"""Windows implementations of symlink-related functions, for ghar
 
-This module patches the following functions in the 'os' module:
-os.symlink; os.islink; os.readlink; os.lstat.
+This module monkey-patches the following functions in the 'os' module:
+os.symlink; os.islink; os.readlink; os.lstat; os.unlink.
 
-Note that these functions are written specifically to work with Ghar, and
+Note that these patches are written specifically to work with ghar, and
 may need to be generalized in order to work in other contexts.
 
 Most code by 'juntalis' @ http://stackoverflow.com/a/7924557/1037
 and David Leonard @ http://stackoverflow.com/a/4388195/1037
 """
 
+__author__ =  'Onno Broekmans <onnodb@gmail.com>'
+__version__=  '1'
+
 import os
 from win32file import *
 from winioctlcon import FSCTL_GET_REPARSE_POINT
 
 __all__ = ['islink', 'readlink', 'symlink', 'lstat']
+
 
 # Win32file doesn't seem to have this attribute.
 FILE_ATTRIBUTE_REPARSE_POINT = 1024
@@ -26,8 +30,7 @@ GENERIC = 'generic'
 
 
 def islink(fpath):
-    """Windows islink implementation
-    """
+    """Windows islink implementation"""
     if GetFileAttributes(fpath) & FILE_ATTRIBUTE_REPARSE_POINT == FILE_ATTRIBUTE_REPARSE_POINT:
         return True
     return False
@@ -61,7 +64,6 @@ def parse_reparse_buffer(original, reparse_type=SYMBOLIC_LINK):
             } GenericReparseBuffer;
         } DUMMYUNIONNAME;
     } REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
-
     """
     # Size of our data types
     SZULONG = 4 # sizeof(ULONG)
@@ -133,8 +135,7 @@ def parse_reparse_buffer(original, reparse_type=SYMBOLIC_LINK):
 
 
 def readlink(fpath):
-    """Windows readlink implementation
-    """
+    """Windows readlink implementation"""
     # This wouldn't return true if the file didn't exist, as far as I know.
     if not islink(fpath):
         return None
@@ -166,8 +167,7 @@ def readlink(fpath):
 
 __CSL = None
 def symlink(source, link_name):
-    """Create a symbolic link pointing to source named link_name
-    """
+    """Create a symbolic link pointing to source named link_name"""
     global __CSL
     if __CSL is None:
         import ctypes
@@ -185,7 +185,7 @@ def symlink(source, link_name):
 class MockLstatResult:
     """Replacement for nt.stat_result
 
-    Very simple replacement, since Ghar only uses the "st_mode" attribute.
+    Very simple replacement, since ghar only uses the "st_mode" attribute.
     We need it because nt.stat_result has read-only attributes.
     """
     def __init__(self, st_mode):
@@ -202,7 +202,7 @@ def lstat(path):
     """Windows-symlink-aware implementation of os.lstat
 
     Returns a MockLstatResult object, which contains only the tiny little bit
-    of information about path that Ghar needs.
+    of information about path that ghar needs.
     """
     import stat
     s = _orig_lstat(path)

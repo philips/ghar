@@ -39,8 +39,8 @@ try:
 except ImportError:
     argparse = __import__('argparse_ghar')
 
-# work around Python-on-Windows' lack of symlink functions
-if os.name == 'nt':
+# work around Python-on-Windows' lack of symlink functions (Python 2)
+if (sys.version_info[0] < 3) and (os.name == 'nt'):
     import ghar_win
 
 repos = []
