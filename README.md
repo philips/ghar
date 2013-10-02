@@ -106,3 +106,11 @@ Contributors
 - Jacob Kaplan-Moss
 - aff0
 - Charles R. Hogg III
+
+
+Notes about Windows support
+---------------------------
+
+Creating symlinks under Windows requires Administrator rights. This means that
+you will have to run ghar as Administrator / with elevated privileges
+(Windows Vista and higher).
