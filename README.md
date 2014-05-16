@@ -15,7 +15,7 @@ ghar aims to be self contained to make it easy to use on machines where you
 may not have root. The clone of ghar you make below contains the ghar tool and
 will be the directory in which you clone all of your dotfile repos.
 
-    $ git clone git://ifup.org/philips/ghar.git
+    $ git clone https://github.com/philips/ghar.git
     $ export PATH=$PATH:`pwd`/ghar/bin/ # You may wish to make this permanent
 
 If you'd like bash tab completion, either move the included
