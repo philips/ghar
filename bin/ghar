@@ -148,7 +148,7 @@ class Repo:
         found_one = False
         for f in l:
             # global .gitconfig as a config is OK but not .git/ or .gitignore
-            if re.match("^\.git(ignore|modules)?$", f) or re.match("^\README.*$", f) or re.match("^\.travis.yml"):
+            if re.match("^\.git(ignore|modules)?$", f) or re.match("^\README.*$", f) or re.match("^\.travis.yml", f):
                 self.ls.remove(f)
             elif re.match("^\..+$", f):
                 found_one = True
