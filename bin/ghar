@@ -95,7 +95,7 @@ class Link:
         elif S_ISREG(self.target_mode):
             return "file"
         elif S_ISLNK(self.target_mode):
-            link = os.readlink(self.target)
+            link = os.path.abspath(os.readlink(self.target))
             if link != self.path:
                 return "link to %s" % link
             else:
