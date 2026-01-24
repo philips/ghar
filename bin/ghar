@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright (C) 2010 Brandon Philips <brandon@ifup.org>
 #
@@ -29,7 +29,7 @@ import re
 try: # Assume Python3
     from urllib import parse
 except ImportError: # Support Python2
-    from urlparse import urlparse
+    from urllib.parse import urlparse
 import subprocess
 from stat import *
 
@@ -199,8 +199,8 @@ class Repo:
                 new_path = os.path.join(path, fname)
                 dir_links += self.list_directory_links(new_path)
             elif link_status.startswith("link to "):
-                print ("Linking %s to %s: can't handle non-ghar symlinks." %
-                       (link, os.path.join(path, fname)))
+                print(("Linking %s to %s: can't handle non-ghar symlinks." %
+                       (link, os.path.join(path, fname))))
             else:
                 dir_links.append(Link(os.path.join(path, fname), base=self.path, ignore=self.ignore))
         return dir_links
@@ -258,14 +258,14 @@ argp_add.set_defaults(func=add)
 def _git_subcommand(args, action):
     pull_repos = repos
     if args.repos:
-        pull_repos = filter(lambda x: str(x) in args.repos, repos)
+        pull_repos = [x for x in repos if str(x) in args.repos]
 
     for r in pull_repos:
         try:
             status, string = getattr(r, action)()
-            print ("%s: %s" % (str(r), string))
+            print(("%s: %s" % (str(r), string)))
         except NoGitException as e:
-            print ("%s is not a git repo" % str(r))
+            print(("%s is not a git repo" % str(r)))
     return 0
 
 argp_pull = argp_sub.add_parser('pull', help='pull all or a few repos')
@@ -285,25 +285,25 @@ argp_status.set_defaults(func=status)
 def _link_subcommand(args, action, error_msg):
     pull_repos = repos
     if args.repos:
-        pull_repos = filter(lambda x: str(x) in args.repos, repos)
+        pull_repos = [x for x in repos if str(x) in args.repos]
 
     for repo in pull_repos:
         if not repo.has_git():
-            print ("%s: not a git repo" % str(repo))
+            print(("%s: not a git repo" % str(repo)))
         elif len(repo.links) <= 0:
-            print ("%s: has no dotfiles" % str(repo))
+            print(("%s: has no dotfiles" % str(repo)))
         else:
             success = True
             ret = []
 
 
-            print (repo.basename)
+            print((repo.basename))
             for l in repo.links:
                 stat, string = getattr(l, action)()
                 if stat == False: success = False
-                print (" %s\t%s" % (string, str(l)))
+                print((" %s\t%s" % (string, str(l))))
             if not success:
-                print (error_msg % str(repo))
+                print((error_msg % str(repo)))
 
 
 argp_install = argp_sub.add_parser('install', help="install symlinks")
