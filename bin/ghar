@@ -189,7 +189,7 @@ class Repo:
     # If it _does_ exist, recurse into it and symlink individual files.
     def list_directory_links(self, path):
         dir_links = []
-        ls = os.listdir(path)
+        ls = self.ls if path == self.path else os.listdir(path)
         for fname in ls:
             if re.match(r'^\.git/?$', fname):
                 continue

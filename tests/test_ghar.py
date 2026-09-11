@@ -117,5 +117,62 @@ class RepositoryDiscoveryTests(GharIntegrationTest):
         self.assertNotIn(".git", result.stdout.splitlines())
 
 
+class RepositoryClassificationTests(GharIntegrationTest):
+    def test_dotfile_repository_is_installed_as_a_collection(self):
+        repo = self.create_repo("shell", {".shellrc": "settings\n"})
+
+        result = self.run_ghar("install", "shell")
+
+        target = self.home / ".shellrc"
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(target.is_symlink())
+        self.assertEqual(Path(os.readlink(str(target))), repo / ".shellrc")
+
+    def test_regular_file_repository_is_installed_as_one_directory(self):
+        repo = self.create_repo("theme", {"colors.conf": "blue\n"})
+
+        result = self.run_ghar("install", "theme")
+
+        target = self.home / ".theme"
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(target.is_symlink())
+        self.assertEqual(Path(os.readlink(str(target))), repo)
+        self.assertFalse((self.home / "colors.conf").exists())
+
+    def test_repository_metadata_is_not_installed(self):
+        repo = self.create_repo(
+            "editor",
+            {
+                ".editorrc": "editor\n",
+                ".gitignore": "ignored\n",
+                ".gitmodules": "modules\n",
+                ".travis.yml": "language: python\n",
+                "README.md": "documentation\n",
+            },
+        )
+
+        result = self.run_ghar("install", "editor")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            {path.name for path in self.home.iterdir()},
+            {".editorrc"},
+        )
+        self.assertEqual(
+            Path(os.readlink(str(self.home / ".editorrc"))),
+            repo / ".editorrc",
+        )
+
+    def test_gitconfig_is_treated_as_user_configuration(self):
+        repo = self.create_repo("git-config", {".gitconfig": "[user]\n"})
+
+        result = self.run_ghar("install", "git-config")
+
+        target = self.home / ".gitconfig"
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(target.is_symlink())
+        self.assertEqual(Path(os.readlink(str(target))), repo / ".gitconfig")
+
+
 if __name__ == "__main__":
     unittest.main()
