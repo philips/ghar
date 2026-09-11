@@ -1,6 +1,8 @@
 *
 !/bin
 !/bin/*.py
+!/tests/
+!/tests/*.py
 !README.md
 !COPYING
 !ghar-bash-completion.sh
