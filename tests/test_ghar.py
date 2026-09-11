@@ -67,6 +67,15 @@ class GharIntegrationTest(unittest.TestCase):
             path.write_text(contents)
         return repo
 
+    def git(self, cwd, *args):
+        result = self.run_command(["git"] + list(args), cwd=cwd)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return result
+
+    def commit_all(self, repo, message="test commit"):
+        self.git(repo, "add", ".")
+        self.git(repo, "commit", "-q", "-m", message)
+
 
 class StartupTests(GharIntegrationTest):
     def test_source_compiles_without_syntax_warnings(self):
@@ -339,6 +348,54 @@ class StatusAndUninstallTests(GharIntegrationTest):
         self.assertEqual(Path(os.readlink(str(link_target))), foreign_source)
         self.assertIn("{} is not a ghar link".format(file_target), result.stdout)
         self.assertIn("can't handle non-ghar symlinks", result.stdout)
+
+
+class GitCommandTests(GharIntegrationTest):
+    def test_status_reports_clean_dirty_and_non_git_repositories(self):
+        clean_repo = self.create_repo("clean", {".cleanrc": "clean\n"})
+        self.commit_all(clean_repo)
+        dirty_repo = self.create_repo("dirty", {".dirtyrc": "original\n"})
+        self.commit_all(dirty_repo)
+        (dirty_repo / ".dirtyrc").write_text("changed\n")
+        non_git = self.ghar_root / "not-git"
+        non_git.mkdir()
+        (non_git / ".notes").write_text("notes\n")
+
+        all_result = self.run_ghar("status")
+        selected_result = self.run_ghar("status", "clean")
+
+        self.assertEqual(all_result.returncode, 0, all_result.stderr)
+        self.assertIn("clean: clean", all_result.stdout)
+        self.assertIn("dirty: dirty", all_result.stdout)
+        self.assertIn("not-git is not a git repo", all_result.stdout)
+        self.assertEqual(selected_result.returncode, 0, selected_result.stderr)
+        self.assertIn("clean: clean", selected_result.stdout)
+        self.assertNotIn("dirty:", selected_result.stdout)
+        self.assertNotIn("not-git", selected_result.stdout)
+
+    def test_pull_updates_from_a_local_remote(self):
+        remote = self.workspace / "remote.git"
+        self.git(self.workspace, "init", "--bare", "-q", str(remote))
+
+        seed = self.workspace / "seed"
+        seed.mkdir()
+        self.git(seed, "init", "-q")
+        (seed / ".pulledrc").write_text("version one\n")
+        self.commit_all(seed, "initial")
+        self.git(seed, "remote", "add", "origin", str(remote))
+        self.git(seed, "push", "-q", "-u", "origin", "HEAD")
+
+        clone = self.ghar_root / "pulled"
+        self.git(self.ghar_root, "clone", "-q", str(remote), str(clone))
+        (seed / ".pulledrc").write_text("version two\n")
+        self.commit_all(seed, "update")
+        self.git(seed, "push", "-q")
+
+        result = self.run_ghar("pull")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("pulled:", result.stdout)
+        self.assertEqual((clone / ".pulledrc").read_text(), "version two\n")
 
 
 if __name__ == "__main__":
