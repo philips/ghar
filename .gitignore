@@ -1,6 +1,11 @@
 *
 !/bin
 !/bin/*.py
+!/tests/
+!/tests/*.py
+!/.github/
+!/.github/workflows/
+!/.github/workflows/tests.yml
 !README.md
 !COPYING
 !ghar-bash-completion.sh
