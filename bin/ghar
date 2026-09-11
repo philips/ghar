@@ -148,9 +148,9 @@ class Repo:
         found_one = False
         for f in l:
             # global .gitconfig as a config is OK but not .git/ or .gitignore
-            if re.match("^\.git(ignore|modules)?$", f) or re.match("^README.*$", f) or re.match("^\.travis.yml", f):
+            if re.match(r"^\.git(ignore|modules)?$", f) or re.match(r"^README.*$", f) or re.match(r"^\.travis.yml", f):
                 self.ls.remove(f)
-            elif re.match("^\..+$", f):
+            elif re.match(r"^\..+$", f):
                 found_one = True
         if found_one: return True
         return False
@@ -191,7 +191,7 @@ class Repo:
         dir_links = []
         ls = os.listdir(path)
         for fname in ls:
-            if re.match('^\.git\/?$', fname):
+            if re.match(r'^\.git/?$', fname):
                 continue
             link = Link(os.path.join(path, fname), base=self.path)
             ok, link_status = link.status()
