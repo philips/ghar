@@ -279,5 +279,67 @@ class IgnoreFileTests(GharIntegrationTest):
         self.assertEqual(result.stdout.count(" skip\t"), 3)
 
 
+class StatusAndUninstallTests(GharIntegrationTest):
+    def test_status_reports_installed_missing_and_conflicting_targets(self):
+        self.create_repo(
+            "status-repo",
+            {
+                ".installed": "installed\n",
+                ".missing": "missing\n",
+                ".conflict": "conflict\n",
+            },
+        )
+        install = self.run_ghar("install", "status-repo")
+        self.assertEqual(install.returncode, 0, install.stderr)
+        (self.home / ".missing").unlink()
+        (self.home / ".conflict").unlink()
+        (self.home / ".conflict").write_text("local file\n")
+
+        result = self.run_ghar("install", "--status", "status-repo")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("ok\t{}".format(self.home / ".installed"), result.stdout)
+        self.assertIn("no such file\t{}".format(self.home / ".missing"), result.stdout)
+        self.assertIn("file\t{}".format(self.home / ".conflict"), result.stdout)
+        self.assertIn("error: status-repo is not fully installed", result.stdout)
+
+    def test_uninstall_removes_owned_links_and_reports_repeated_removal(self):
+        self.create_repo("shell", {".shellrc": "settings\n"})
+        install = self.run_ghar("install", "shell")
+        self.assertEqual(install.returncode, 0, install.stderr)
+        target = self.home / ".shellrc"
+
+        first = self.run_ghar("uninstall", "shell")
+        second = self.run_ghar("uninstall", "shell")
+
+        self.assertEqual(first.returncode, 0, first.stderr)
+        self.assertFalse(target.exists())
+        self.assertIn("ok\t{}".format(target), first.stdout)
+        self.assertEqual(second.returncode, 0, second.stderr)
+        self.assertIn("{} no such file".format(target), second.stdout)
+        self.assertIn("error: shell is not installed", second.stdout)
+
+    def test_uninstall_preserves_files_and_foreign_symlinks(self):
+        self.create_repo(
+            "local-targets",
+            {".local-file": "repository\n", ".local-link": "repository\n"},
+        )
+        file_target = self.home / ".local-file"
+        file_target.write_text("local\n")
+        foreign_source = self.workspace / "foreign-target"
+        foreign_source.write_text("foreign\n")
+        link_target = self.home / ".local-link"
+        link_target.symlink_to(foreign_source)
+
+        result = self.run_ghar("uninstall", "local-targets")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(file_target.read_text(), "local\n")
+        self.assertTrue(link_target.is_symlink())
+        self.assertEqual(Path(os.readlink(str(link_target))), foreign_source)
+        self.assertIn("{} is not a ghar link".format(file_target), result.stdout)
+        self.assertIn("can't handle non-ghar symlinks", result.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()
