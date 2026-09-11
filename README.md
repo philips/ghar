@@ -89,6 +89,15 @@ README.*
 .gitmodules
 ```
 
+Testing
+-------
+
+The integration suite requires Git and runs entirely in temporary directories.
+Tests that require symbolic links are skipped when the host cannot create them.
+Run it with:
+
+    $ python -Werror::SyntaxWarning -m unittest discover -s tests -v
+
 Thanks
 ------
 These two chaps helped me on the original bash implementation. However,

@@ -12,6 +12,30 @@ GHAR_SOURCE = PROJECT_ROOT / "bin" / "ghar"
 ARGPARSE_SOURCE = PROJECT_ROOT / "bin" / "argparse_ghar.py"
 
 
+def symlinks_are_available():
+    if not hasattr(os, "symlink"):
+        return False
+    with tempfile.TemporaryDirectory() as tempdir:
+        root = Path(tempdir)
+        file_target = root / "file-target"
+        file_target.write_text("target\n")
+        directory_target = root / "directory-target"
+        directory_target.mkdir()
+        try:
+            os.symlink(str(file_target), str(root / "file-link"))
+            os.symlink(str(directory_target), str(root / "directory-link"))
+        except (NotImplementedError, OSError):
+            return False
+    return True
+
+
+SYMLINKS_AVAILABLE = symlinks_are_available()
+REQUIRES_SYMLINKS = unittest.skipUnless(
+    SYMLINKS_AVAILABLE,
+    "symbolic links are not available in this environment",
+)
+
+
 class GharIntegrationTest(unittest.TestCase):
     def setUp(self):
         self.tempdir = tempfile.TemporaryDirectory()
@@ -126,6 +150,7 @@ class RepositoryDiscoveryTests(GharIntegrationTest):
         self.assertNotIn(".git", result.stdout.splitlines())
 
 
+@REQUIRES_SYMLINKS
 class RepositoryClassificationTests(GharIntegrationTest):
     def test_dotfile_repository_is_installed_as_a_collection(self):
         repo = self.create_repo("shell", {".shellrc": "settings\n"})
@@ -183,6 +208,7 @@ class RepositoryClassificationTests(GharIntegrationTest):
         self.assertEqual(Path(os.readlink(str(target))), repo / ".gitconfig")
 
 
+@REQUIRES_SYMLINKS
 class InstallationTests(GharIntegrationTest):
     def test_install_links_a_directory_when_the_home_directory_is_absent(self):
         repo = self.create_repo(
@@ -264,6 +290,7 @@ class InstallationTests(GharIntegrationTest):
         self.assertNotIn("bravo", result.stdout)
 
 
+@REQUIRES_SYMLINKS
 class IgnoreFileTests(GharIntegrationTest):
     def test_gharignore_honors_globs_comments_and_blank_lines(self):
         repo = self.create_repo(
@@ -288,6 +315,7 @@ class IgnoreFileTests(GharIntegrationTest):
         self.assertEqual(result.stdout.count(" skip\t"), 3)
 
 
+@REQUIRES_SYMLINKS
 class StatusAndUninstallTests(GharIntegrationTest):
     def test_status_reports_installed_missing_and_conflicting_targets(self):
         self.create_repo(
