@@ -102,6 +102,11 @@ class GharIntegrationTest(unittest.TestCase):
 
 
 class StartupTests(GharIntegrationTest):
+    def test_executable_uses_python3(self):
+        shebang = GHAR_SOURCE.read_text().splitlines()[0]
+
+        self.assertEqual(shebang, "#!/usr/bin/env python3")
+
     def test_source_compiles_without_syntax_warnings(self):
         env = self.env.copy()
         env["PYTHONPYCACHEPREFIX"] = str(self.workspace / "pycache")
@@ -423,6 +428,7 @@ class GitCommandTests(GharIntegrationTest):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("pulled:", result.stdout)
+        self.assertNotIn("b'", result.stdout)
         self.assertEqual((clone / ".pulledrc").read_text(), "version two\n")
 
 
