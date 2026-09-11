@@ -1,0 +1,3 @@
+# Directories that are part of ghar itself, not dotfile repositories.
+.github
+tests

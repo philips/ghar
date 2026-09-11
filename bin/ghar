@@ -38,6 +38,16 @@ argp_sub = argp.add_subparsers(title='ghar commands')
 class NoGitException(Exception):
     pass
 
+
+def load_ignore_patterns(path):
+    """Load non-comment fnmatch patterns from an ignore file."""
+    if not os.path.exists(path):
+        return []
+    with open(path) as ignore_file:
+        lines = (line.strip() for line in ignore_file)
+        return [line for line in lines if line and not line.startswith('#')]
+
+
 class Link:
     def install(self):
         status = self._target_check()
@@ -204,9 +214,7 @@ class Repo:
         """
         self.ignore = ['.gharignore']
         ignorefile = os.path.join(self.path, ".gharignore")
-        if os.path.exists(ignorefile):
-            lines = (line.strip() for line in open(ignorefile))
-            self.ignore.extend(line for line in lines if line and line[0] != '#')
+        self.ignore.extend(load_ignore_patterns(ignorefile))
 
     def __str__(self):
         return self.basename
@@ -323,14 +331,18 @@ argp_uninstall.set_defaults(func=uninstall)
 
 
 def _init_repos():
+    ignorefile = os.path.join(args.ghar_dir, '.gharignore')
+    ignore = load_ignore_patterns(ignorefile)
     for root, dirs, files in os.walk(args.ghar_dir):
         if root == args.ghar_dir:
-            if 'bin' in dirs:
-                dirs.remove('bin')
-            if '.git' in dirs:
-                dirs.remove('.git')
-            for dir in dirs:
-                repos.append(Repo(os.path.join(root, dir)))
+            dirs = [
+                directory for directory in dirs
+                if directory not in ('bin', '.git')
+                and not any(fnmatch.fnmatch(directory, pattern)
+                            for pattern in ignore)
+            ]
+            for directory in dirs:
+                repos.append(Repo(os.path.join(root, directory)))
         break
 
 def main(args):

@@ -154,6 +154,19 @@ class RepositoryDiscoveryTests(GharIntegrationTest):
         self.assertNotIn("bin", result.stdout.splitlines())
         self.assertNotIn(".git", result.stdout.splitlines())
 
+    def test_list_honors_root_repository_ignore_patterns(self):
+        (self.ghar_root / ".gharignore").write_text(
+            "# Non-repository directories\n\n.github\nbuild-*\n"
+        )
+        self.create_repo("dotfiles", {".dotfilerc": "visible\n"})
+        (self.ghar_root / ".github").mkdir()
+        (self.ghar_root / "build-output").mkdir()
+
+        result = self.run_ghar("list")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.splitlines(), ["dotfiles"])
+
 
 @REQUIRES_SYMLINKS
 class RepositoryClassificationTests(GharIntegrationTest):
