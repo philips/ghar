@@ -319,6 +319,59 @@ class IgnoreFileTests(GharIntegrationTest):
         self.assertFalse((self.home / ".gharignore").exists())
         self.assertEqual(result.stdout.count(" skip\t"), 3)
 
+    def test_status_and_uninstall_treat_ignored_files_as_skipped(self):
+        self.create_repo(
+            "ignored-operations",
+            {
+                ".gharignore": "*.txt\n",
+                ".keep": "installed\n",
+                "notes.txt": "ignored\n",
+            },
+        )
+        install = self.run_ghar("install", "ignored-operations")
+        self.assertEqual(install.returncode, 0, install.stderr)
+
+        status = self.run_ghar("install", "--status", "ignored-operations")
+        uninstall = self.run_ghar("uninstall", "ignored-operations")
+
+        self.assertEqual(status.returncode, 0, status.stderr)
+        self.assertIn("ok\t{}".format(self.home / ".keep"), status.stdout)
+        self.assertIn("skip\t{}".format(self.home / "notes.txt"), status.stdout)
+        self.assertIn("skip\t{}".format(self.home / ".gharignore"), status.stdout)
+        self.assertNotIn("not fully installed", status.stdout)
+
+        self.assertEqual(uninstall.returncode, 0, uninstall.stderr)
+        self.assertFalse((self.home / ".keep").exists())
+        self.assertIn("skip\t{}".format(self.home / "notes.txt"), uninstall.stdout)
+        self.assertIn("skip\t{}".format(self.home / ".gharignore"), uninstall.stdout)
+        self.assertNotIn("is not installed", uninstall.stdout)
+
+    def test_uninstall_preserves_a_link_that_becomes_ignored(self):
+        repo = self.create_repo(
+            "newly-ignored",
+            {
+                ".gharignore": "# Nothing ignored yet\n",
+                ".legacy": "legacy\n",
+            },
+        )
+        install = self.run_ghar("install", "newly-ignored")
+        self.assertEqual(install.returncode, 0, install.stderr)
+        target = self.home / ".legacy"
+        self.assertTrue(target.is_symlink())
+        (repo / ".gharignore").write_text(".legacy\n")
+
+        status = self.run_ghar("install", "--status", "newly-ignored")
+        uninstall = self.run_ghar("uninstall", "newly-ignored")
+
+        self.assertEqual(status.returncode, 0, status.stderr)
+        self.assertIn("skip\t{}".format(target), status.stdout)
+        self.assertNotIn("not fully installed", status.stdout)
+        self.assertEqual(uninstall.returncode, 0, uninstall.stderr)
+        self.assertIn("skip\t{}".format(target), uninstall.stdout)
+        self.assertNotIn("is not installed", uninstall.stdout)
+        self.assertTrue(target.is_symlink())
+        self.assertEqual(Path(os.readlink(str(target))), repo / ".legacy")
+
 
 @REQUIRES_SYMLINKS
 class StatusAndUninstallTests(GharIntegrationTest):
