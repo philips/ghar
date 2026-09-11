@@ -62,6 +62,25 @@ into the proper directory and then install the symlinks with two commands:
       oh-my-zsh
        installed	/home/philips/.oh-my-zsh
 
+Using Git submodules
+--------------------
+
+ghar does not initialize Git submodules itself. If a dotfile repository uses
+submodules, pass `--recursive` to `git clone` when adding it:
+
+    $ ghar add -- --recursive <repo-url> <repo-name>
+    $ ghar install <repo-name>
+
+The first `--` tells ghar to pass the remaining options to `git clone`. If the
+repository has already been cloned, initialize its submodules before installing
+it:
+
+    $ git -C <path-to-repo> submodule update --init --recursive
+    $ ghar install <repo-name>
+
+Run the submodule update command again after `ghar pull` when the parent
+repository changes the submodule revisions it references.
+
 Upgrading a machine
 -------------------
 
