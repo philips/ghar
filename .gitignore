@@ -6,6 +6,7 @@
 !/.github/
 !/.github/workflows/
 !/.github/workflows/tests.yml
+!/.gharignore
 !README.md
 !COPYING
 !ghar-bash-completion.sh
