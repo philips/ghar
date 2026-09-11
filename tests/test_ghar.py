@@ -255,5 +255,29 @@ class InstallationTests(GharIntegrationTest):
         self.assertNotIn("bravo", result.stdout)
 
 
+class IgnoreFileTests(GharIntegrationTest):
+    def test_gharignore_honors_globs_comments_and_blank_lines(self):
+        repo = self.create_repo(
+            "ignored-files",
+            {
+                ".gharignore": "# Local-only files\n\n*.txt\n.secret\n",
+                ".keep": "installed\n",
+                ".secret": "private\n",
+                "notes.txt": "notes\n",
+            },
+        )
+
+        result = self.run_ghar("install", "ignored-files")
+
+        keep_target = self.home / ".keep"
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(keep_target.is_symlink())
+        self.assertEqual(Path(os.readlink(str(keep_target))), repo / ".keep")
+        self.assertFalse((self.home / ".secret").exists())
+        self.assertFalse((self.home / "notes.txt").exists())
+        self.assertFalse((self.home / ".gharignore").exists())
+        self.assertEqual(result.stdout.count(" skip\t"), 3)
+
+
 if __name__ == "__main__":
     unittest.main()
