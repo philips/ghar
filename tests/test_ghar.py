@@ -398,5 +398,34 @@ class GitCommandTests(GharIntegrationTest):
         self.assertEqual((clone / ".pulledrc").read_text(), "version two\n")
 
 
+class AddCommandTests(GharIntegrationTest):
+    def test_add_clones_a_local_repository_with_the_requested_name(self):
+        remote = self.workspace / "add-remote.git"
+        self.git(self.workspace, "init", "--bare", "-q", str(remote))
+
+        seed = self.workspace / "add-seed"
+        seed.mkdir()
+        self.git(seed, "init", "-q")
+        (seed / ".addedrc").write_text("added\n")
+        self.commit_all(seed, "initial")
+        self.git(seed, "remote", "add", "origin", str(remote))
+        self.git(seed, "push", "-q", "-u", "origin", "HEAD")
+
+        result = self.run_ghar("add", str(remote), "added-dotfiles")
+
+        clone = self.ghar_root / "added-dotfiles"
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(
+            "git clone {} added-dotfiles".format(remote),
+            result.stdout,
+        )
+        self.assertTrue((clone / ".git").is_dir())
+        self.assertEqual((clone / ".addedrc").read_text(), "added\n")
+
+        listed = self.run_ghar("list")
+        self.assertEqual(listed.returncode, 0, listed.stderr)
+        self.assertIn("added-dotfiles", listed.stdout.splitlines())
+
+
 if __name__ == "__main__":
     unittest.main()
