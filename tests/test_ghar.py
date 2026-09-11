@@ -40,15 +40,32 @@ class GharIntegrationTest(unittest.TestCase):
             "PYTHONDONTWRITEBYTECODE": "1",
         })
 
-    def run_ghar(self, *args):
+    def run_command(self, command, cwd=None):
         return subprocess.run(
-            [sys.executable, str(self.ghar)] + list(args),
-            cwd=str(self.ghar_root),
+            command,
+            cwd=str(cwd or self.workspace),
             env=self.env,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
         )
+
+    def run_ghar(self, *args):
+        return self.run_command(
+            [sys.executable, str(self.ghar)] + list(args),
+            cwd=self.ghar_root,
+        )
+
+    def create_repo(self, name, files=None):
+        repo = self.ghar_root / name
+        repo.mkdir()
+        result = self.run_command(["git", "init", "-q"], cwd=repo)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for relative_path, contents in (files or {}).items():
+            path = repo / relative_path
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(contents)
+        return repo
 
 
 class StartupTests(GharIntegrationTest):
@@ -84,6 +101,20 @@ class StartupTests(GharIntegrationTest):
         self.assertEqual(result.returncode, 0)
         self.assertIn("No repos found in {}".format(self.ghar_root), result.stderr)
         self.assertIn("usage:", result.stdout)
+
+
+class RepositoryDiscoveryTests(GharIntegrationTest):
+    def test_list_discovers_repositories_but_not_internal_directories(self):
+        (self.ghar_root / ".git").mkdir()
+        self.create_repo("alpha", {".alpharc": "alpha\n"})
+        self.create_repo("bravo", {"config": "bravo\n"})
+
+        result = self.run_ghar("list")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(set(result.stdout.splitlines()), {"alpha", "bravo"})
+        self.assertNotIn("bin", result.stdout.splitlines())
+        self.assertNotIn(".git", result.stdout.splitlines())
 
 
 if __name__ == "__main__":
