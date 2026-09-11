@@ -174,5 +174,86 @@ class RepositoryClassificationTests(GharIntegrationTest):
         self.assertEqual(Path(os.readlink(str(target))), repo / ".gitconfig")
 
 
+class InstallationTests(GharIntegrationTest):
+    def test_install_links_a_directory_when_the_home_directory_is_absent(self):
+        repo = self.create_repo(
+            "application",
+            {".config/application/settings.ini": "enabled=true\n"},
+        )
+
+        result = self.run_ghar("install", "application")
+
+        target = self.home / ".config"
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(target.is_symlink())
+        self.assertEqual(Path(os.readlink(str(target))), repo / ".config")
+
+    def test_install_recurses_through_existing_home_directories(self):
+        repo = self.create_repo(
+            "application",
+            {".config/application/settings.ini": "enabled=true\n"},
+        )
+        (self.home / ".config" / "application").mkdir(parents=True)
+
+        result = self.run_ghar("install", "application")
+
+        target = self.home / ".config" / "application" / "settings.ini"
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(target.is_symlink())
+        self.assertEqual(
+            Path(os.readlink(str(target))),
+            repo / ".config" / "application" / "settings.ini",
+        )
+
+    def test_install_is_idempotent(self):
+        repo = self.create_repo("shell", {".shellrc": "settings\n"})
+        first = self.run_ghar("install", "shell")
+        target = self.home / ".shellrc"
+        original_link = os.readlink(str(target))
+
+        second = self.run_ghar("install", "shell")
+
+        self.assertEqual(first.returncode, 0, first.stderr)
+        self.assertEqual(second.returncode, 0, second.stderr)
+        self.assertIn("ok\t{}".format(target), second.stdout)
+        self.assertEqual(os.readlink(str(target)), original_link)
+        self.assertEqual(Path(original_link), repo / ".shellrc")
+
+    def test_install_preserves_files_and_foreign_symlinks(self):
+        self.create_repo(
+            "conflicts",
+            {".existing-file": "replacement\n", ".existing-link": "replacement\n"},
+        )
+        file_target = self.home / ".existing-file"
+        file_target.write_text("keep me\n")
+        foreign_source = self.workspace / "foreign"
+        foreign_source.write_text("foreign\n")
+        link_target = self.home / ".existing-link"
+        link_target.symlink_to(foreign_source)
+
+        result = self.run_ghar("install", "conflicts")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(file_target.read_text(), "keep me\n")
+        self.assertEqual(Path(os.readlink(str(link_target))), foreign_source)
+        self.assertIn("{} exists".format(file_target), result.stdout)
+        self.assertIn("can't handle non-ghar symlinks", result.stdout)
+        self.assertIn(str(link_target), result.stdout)
+        self.assertIn("error: conflicts is not fully installed", result.stdout)
+
+    def test_install_can_select_repositories(self):
+        alpha = self.create_repo("alpha", {".alpha": "alpha\n"})
+        self.create_repo("bravo", {".bravo": "bravo\n"})
+
+        result = self.run_ghar("install", "alpha")
+
+        alpha_target = self.home / ".alpha"
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(alpha_target.is_symlink())
+        self.assertEqual(Path(os.readlink(str(alpha_target))), alpha / ".alpha")
+        self.assertFalse((self.home / ".bravo").exists())
+        self.assertNotIn("bravo", result.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()
